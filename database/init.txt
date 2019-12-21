@@ -1,0 +1,70 @@
+--记账宝v0.0.1
+--daizong.chen 2019-06-29
+--设计了两种记账方式：
+--    1.直接记录余额balance_direct
+--    2.记录出入账金额balance_accumulate
+--最终变动查询函数:
+--    f_inc_fin(start_date,end_date);
+--    e.g select * from f_inc_fin('2019-05-31','2019-06-21');
+
+DROP TABLE IF EXISTS account cascade;
+CREATE TABLE account (
+	account_id smallserial,
+	symbol text default '',
+	owner text default '', 
+	note text default '',
+	card_no text default '',
+	source smallint default 0, /*1: direct_balance, 2: balance_accumulate */
+	record_time timestamp default current_timestamp
+);
+
+DROP TABLE IF EXISTS balance_direct cascade;
+CREATE TABLE balance_direct (
+	fiscal_date date default current_date,
+	symbol text default '',
+	bal NUMERIC(10,2) default 0.0,
+	record_time timestamp default current_timestamp,
+	PRIMARY KEY ( fiscal_date, symbol )
+);
+
+DROP TABLE IF EXISTS balance_accumulate cascade;
+CREATE TABLE balance_accumulate (
+	fiscal_date date default current_date,
+	symbol text default '',
+	transfer NUMERIC(10,2) default 0.0,
+	record_time timestamp default current_timestamp,
+	PRIMARY KEY ( fiscal_date, symbol,transfer )
+);
+
+INSERT INTO ACCOUNT(OWNER, symbol, note,source) VALUES( 'cdz', 'CMBC','民生银行',1) ,( 'cdz', 'BCM','交通银行',1), ( 'cdz', 'ALIPAY-xx','余额宝',1) ,( 'cdz', 'WECHAT-xx','微信',1),(  'zmy', 'ICBC-zyy','工商银行',1), (  'zmy', 'ALIPAY-zyy','余额宝',1), ( 'zmy', 'WECHAT-zyy','微信',1),( 'public', 'ABC','农行保险卡',1), ( 'public', 'ICBC-public','工行开支卡',1), ( 'public', 'SPD','浦发理财卡',1);
+
+INSERT INTO ACCOUNT(OWNER, symbol,note,source) VALUES
+( 'public', 'htsec','海通证券',2),( 'public', 'cjsec','长江证券',2),( 'public', 'spd funds','浦发基金',2),( 'public', 'cmbc funds','民生基金',2),( 'public', 'alipay funds','支付宝基金',2),( 'public', 'cash','现金',2),( 'public', 'rent','房租',2),( 'public', 'pledge','押金',2),( 'public', 'east funds','天天基金',2);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2018-04-18','htsec',5000),('2018-06-22','htsec',5000),('2018-07-27','htsec',5000),('2018-09-03','htsec',100000),('2018-09-26','htsec',1000),('2019-02-24','htsec',10000),('2019-03-04','htsec',50000),('2019-03-26','htsec',40000),('2019-03-29','htsec',10000),('2019-04-15','htsec',500000),('2019-06-06','htsec',21171),('2019-06-25','htsec',68797.09);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2017-11-08','cjsec',3000),('2017-11-27','cjsec',3000),('2017-12-18','cjsec',4000),('2018-01-23','cjsec',4000),('2018-03-29','cjsec',3000),('2018-03-30','cjsec',2000),('2018-11-19','cjsec',5000),('2018-11-23','cjsec',9000),('2018-12-25','cjsec',14000);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2018-06-04','alipay funds',4780.36),('2018-08-12','alipay funds',5000),('2019-03-21','alipay funds',-9780.36);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2019-02-24','spd funds',25000),('2019-05-01','spd funds',55000),('2019-07-01','spd funds',-80000),('2019-07-02','spd funds',23000),('2019-07-13','spd funds',-21171);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2019-02-24','cmbc funds',185356),('2019-03-04','cmbc funds',-100000) , ('2019-05-01','cmbc funds',-21171),('2019-05-30','cmbc funds',21171), ('2019-06-20','cmbc funds',-21171),('2019-06-24','cmbc funds',-64185);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2019-02-01','rent',21171),('2019-04-30','rent',21171),('2019-06-22','rent',21171),('2019-02-05','rent',-7057),('2019-03-05','rent',-7057),('2019-04-05','rent',-7057),('2019-05-05','rent',-7057),('2019-06-05','rent',-7057),('2019-07-05','rent',-7057);
+
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2018-10-15','pledge',17644);
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2019-02-17','cash',1500),('2019-06-20','cash',-100);
+INSERT INTO balance_accumulate(fiscal_date, symbol, transfer) VALUES('2019-06-25','east funds',80000);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-07-22','CMBC',8607.01),( '2019-07-22','BCM',5754.15),( '2019-07-22','ALIPAY-xx',8660.95),( '2019-07-22','WECHAT-xx',0.07), ('2019-07-22','ICBC-zyy',9801.79),( '2019-07-22', 'ALIPAY-zyy',9654.7),( '2019-07-22','WECHAT-zyy',549.58),( '2019-07-22','ABC',24330.6),( '2019-07-22','ICBC-public',5489.74),( '2019-07-22','SPD',37919.57);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-06-21','CMBC',16713.47),( '2019-06-21','BCM',2911.14),( '2019-06-21','ALIPAY-xx',12666.36),( '2019-06-21','WECHAT-xx',13.33), ( '2019-06-21','ICBC-zyy',15055.28),( '2019-06-21', 'ALIPAY-zyy',3623.45),( '2019-06-21','WECHAT-zyy',83.19),( '2019-06-21','ABC',21330.6),( '2019-06-21','ICBC-public',5532.48),( '2019-06-21','SPD',23782.51);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-05-31','CMBC',6998.09),( '2019-05-31','BCM',2614.33),( '2019-05-31','ALIPAY-xx',11736.01),( '2019-05-31','WECHAT-xx',180.03), ( '2019-05-31','ICBC-zyy',1540.65),( '2019-05-31', 'ALIPAY-zyy',17921.42),( '2019-05-31','WECHAT-zyy',2.44), ( '2019-05-31','ABC',18319.19),( '2019-05-31','ICBC-public',4873.44),( '2019-05-31','SPD',9513.1);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-05-02','CMBC',7111.65),( '2019-05-02','BCM',2406.33),( '2019-05-02','ALIPAY-xx',11503.56),( '2019-05-02','WECHAT-xx',202.94), ( '2019-05-02','ICBC-zyy',1754.56),( '2019-05-02', 'ALIPAY-zyy',20089.33),( '2019-05-02','WECHAT-zyy',4.63), ( '2019-05-02','ABC',15319.19),( '2019-05-02','ICBC-public',2839.34),( '2019-05-02','SPD',16446.57);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-03-21','CMBC',46322.99),( '2019-03-21','BCM',1864.33),( '2019-03-21','ALIPAY-xx',23016.27),( '2019-03-21','WECHAT-xx',568.34), ( '2019-03-21','ICBC-zyy',6312.4),( '2019-03-21', 'ALIPAY-zyy',15769.76),( '2019-03-21','WECHAT-zyy',627.79), ( '2019-03-21','ABC',12319.19),( '2019-03-21','ICBC-public',2855.44),( '2019-03-21','SPD',57234.84);
+
+insert into balance_direct(fiscal_date, symbol, bal ) values( '2019-02-25','CMBC',80.96 ),( '2019-02-25','BCM',1862.9),( '2019-02-25','ALIPAY-xx',5983.35),( '2019-02-25','WECHAT-xx',313.9), ( '2019-02-25','ICBC-zyy',11946.11),( '2019-02-25', 'ALIPAY-zyy',6279.99),( '2019-02-25','WECHAT-zyy',1248.4), ( '2019-02-25','ABC',9314.4),( '2019-02-25','ICBC-public',2559.47),( '2019-02-25','SPD',43145.98);

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta charset="utf-8"> 
+    <title>Bootstrap 记账宝</title>
+    <!-- 包含头部信息用于适应不同设备 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 包含 bootstrap 样式表 -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <script src="js/popper.min.js"></script>
+    <script src="js/jquery-3.4.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!-- import bootstrap-table -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="css/bootstrap-table.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="js/bootstrap-table.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="css/bootstrap-select.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="js/bootstrap-select.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function(){
+        $.ajax({
+          url : "http://127.0.0.1:5000/view/account?source=direct",
+          type : "GET",
+          dataType : "json", // 返回的数据类型，设置为JSONP方式
+          success: function(data){
+            var_res = data;
+            // console.log(data);
+            var str = "";
+            for (var i = 0; i < var_res.length; i++){
+                    str += '<option value="'+ var_res[i][0] +'">'+ var_res[i] +'</option>'
+            }
+            $(".selectpicker").html(str);
+            $('.selectpicker').selectpicker('refresh');
+          },error:function(){
+            alert("error");
+          }
+        });
+        $.ajax({
+          url : "http://127.0.0.1:5000/view/account?source=accumulate",
+          type : "GET",
+          dataType : "json", // 返回的数据类型，设置为JSONP方式
+          success: function(data){
+            var_res = data;
+            // console.log(data);
+            var str = "";
+            for (var i = 0; i < var_res.length; i++){
+                    str += '<option value="'+ var_res[i][0] +'">'+ var_res[i] +'</option>'
+            }
+            $(".selectpicker2").html(str);
+            $('.selectpicker2').selectpicker('refresh');
+          },error:function(){
+            alert("error");
+          }
+        });
+        
+        // $("button").click(function(){
+          // console.log($("#select1").val());
+          // console.log($("#select2").val());
+          // return;
+          // var_url = "http://127.0.0.1:5000/view/increment"
+          // var_st = $("#select1").val()
+          // var_et = $("#select2").val()
+          // var patt = /^\d{4}-\d{2}-\d{2}/
+          // if(!patt.test(var_st)){
+          //   alert("开始时间格式有误 yyyy-mm-dd");
+          //   return;
+          // }
+          // if(!patt.test(var_et)){
+          //   alert("结束时间格式有误 yyyy-mm-dd");
+          //   return;
+          // }
+          // var_url = var_url + "?start_date=" +var_st +"&end_date=" + var_et
+          // $.ajax({
+          //   url : var_url,
+          //   type : "GET",
+          //   dataType : "json", // 返回的数据类型，设置为JSONP方式
+          //   success: function(data){
+          //     for(var i = 0; i < data.length;i++){
+          //       // console.log(data[i]);
+          //     }
+          //     $('#table').bootstrapTable('load',data)
+          //     // console.log($("#starttime").val())
+          //     // console.log($("#endtime").val())
+          //   },error:function(){
+          //     alert("error");
+          //   }
+          // });
+        // });
+      });
+      function query1(){
+        console.log($("#select1").val());
+        $.ajax({
+          url : "http://127.0.0.1:5000/direct/"+$("#select1").val(),
+          type : "GET",
+          dataType : "json", // 返回的数据类型，设置为JSON方式
+          success: function(data){
+            $('#table1').bootstrapTable('load',data)
+            },error:function(){
+            alert("error");
+          }
+        });
+      }
+      function query2(){
+        console.log($("#select2").val());
+        $.ajax({
+          url : "http://127.0.0.1:5000/accumulate/"+$("#select2").val(),
+          type : "GET",
+          dataType : "json", // 返回的数据类型，设置为JSON方式
+          success: function(data){
+            $('#table2').bootstrapTable('load',data)
+            },error:function(){
+            alert("error");
+          }
+        });
+      }
+      function post1(){
+        var patt = /^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/;
+        if(!patt.test($("#input-date1").val())){
+          alert("输入日期有误 yyyy-mm-dd");
+          return;
+        }
+        var patt2 = /^-?(([1-9]\d*)|0)(\.\d+)?$/
+        if(!patt2.test($("#input-val1").val())){
+          alert("输入金额有误");
+          return;
+        }
+        var str = "{\"date\":\""+ $("#input-date1").val() +"\",\"val\":"+$("#input-val1").val()+"}";
+        console.log(str);
+        $.ajax({
+          url : "http://127.0.0.1:5000/direct/"+$("#select1").val(),
+          type : "POST",
+          contentType:'application/json',
+          data : str,
+          success: function(data){
+            alert("done");
+            console.log(data);
+            },error:function(){
+            alert("error");
+          }
+        });
+      }
+      function post2(){
+        var patt = /^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/;
+        if(!patt.test($("#input-date2").val())){
+          alert("输入日期有误 yyyy-mm-dd");
+          return;
+        }
+        var patt2 = /^-?(([1-9]\d*)|0)(\.\d+)?$/
+        if(!patt2.test($("#input-val2").val())){
+          alert("输入金额有误");
+          return;
+        }
+        var str = "{\"date\":\""+ $("#input-date2").val() +"\",\"val\":"+$("#input-val2").val()+"}";
+        console.log(str);
+        $.ajax({
+          url : "http://127.0.0.1:5000/accumulate/"+$("#select2").val(),
+          type : "POST",
+          contentType:'application/json',
+          data : str,
+          success: function(data){
+            alert("done");
+            console.log(data);
+            },error:function(){
+            alert("error");
+          }
+        });
+      }
+      </script>
+      <style>
+      #table1 tr:nth-child(odd){
+        background:#f4f8fb;
+      }
+      #table2 tr:nth-child(odd){
+        background:#f4f8fb;
+      }
+      </style>
+  </head>
+
+  <body>
+    
+    <!-- <div class="container">
+      <table class="table table-condensed"
+        id="table"
+        data-toggle="table"
+        data-toolbar="#toolbar"
+        data-height="500"
+        data-search="true" >
+        <thead >
+           <tr>
+             <th data-field="owner">Owner</th>
+             <th data-field="symbol">Symbol</th>
+             <th data-field="note">Note</th>
+             <th data-field="latest_date">Latest Date</th>
+             <th data-field="latest_bal">Latest Balance</th>
+             <th data-field="previous_date">Previous Date</th>
+             <th data-field="previous_bal">Previous Balance</th>
+             <th data-field="increment">Increment</th>
+           </tr>
+        </thead>
+      </table>
+    </div> -->
+    <div class="container"
+      <div class="col-md-12 col-md-offset-3">  
+        <form class="bs-example bs-example-form" role="form">
+            <div class="row">
+              <div class="col-lg-6">
+                <span class="input-group-addon">直接余额</span>
+                <!-- <input type="text" class="form-control" id="starttime" placeholder="2019-01-01"> -->
+                <select id="select1" class="form-control selectpicker" data-live-search="false"></select>
+                <table class="table table-condensed"
+                    id="table1"
+                    data-toggle="table"
+                    data-toolbar="#toolbar"
+                    data-height="220">
+                    <thead >
+                    <tr>
+                      <th data-field="fiscal_date">Date</th>
+                      <th data-field="symbol">Symbol</th>
+                      <th data-field="bal">Lastest Balance</th>
+                      <th data-field="record_time">Record Time</th>
+                    </tr>
+                  </thead>
+                </table>
+                <div style="padding: 20px 100px;"></div>
+                <button type="button" class="btn btn-primary" onclick="query1()">查询最近</button>
+                <div style="padding: 20px 100px;"></div>
+                <span class="input-group-addon">日期 与 余额</span>
+                <input type="text" class="form-control" id="input-date1" placeholder="2019-01-01">
+                <input type="text" class="form-control" id="input-val1" placeholder="0">
+                <div style="padding: 20px 100px;"></div>
+                <button type="button" class="btn btn-primary" onclick="post1()">记账</button>
+              </div>
+              <div class="col-lg-6">
+                <span class="input-group-addon">累积余额</span>
+                <!-- <input type="text" class="form-control" id="endtime" placeholder="2019-07-28"> -->
+                <select id="select2" class="form-control selectpicker2" data-live-search="false"></select>
+                <table class="table table-condensed"
+                    id="table2"
+                    data-toggle="table"
+                    data-toolbar="#toolbar"
+                    data-height="220">
+                    <thead >
+                    <tr>
+                      <th data-field="fiscal_date">Date</th>
+                      <th data-field="symbol">Symbol</th>
+                      <th data-field="transfer">Transfer Amount</th>
+                      <th data-field="record_time">Record Time</th>
+                    </tr>
+                  </thead>
+                </table>
+                <div style="padding: 20px 100px;"></div>
+                <button type="button" class="btn btn-primary" onclick="query2()">查询最近</button>
+                <div style="padding: 20px 100px;"></div>
+                <span class="input-group-addon">日期 与 余额</span>
+                <input type="text" class="form-control" id="input-date2" placeholder="2019-01-01">
+                <input type="text" class="form-control" id="input-val2" placeholder="0">
+                <div style="padding: 20px 100px;"></div>
+                <button type="button" class="btn btn-primary" onclick="post2()">记账</button>
+              </div>
+              <!-- <div style="padding: 20px 100px;">
+                  <button type="button" class="btn btn-primary">查询</button>
+              </div> -->
+            </div>
+        </form>
+      </div>
+    </div>
+  </body>
+
+</html>

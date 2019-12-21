@@ -1,0 +1,54 @@
+drop view v_fiscal_date cascade;
+create view v_fiscal_date as select distinct fiscal_date from balance_direct order by fiscal_date;
+
+drop view v_bal_dir  cascade;
+create view v_bal_dir as select fiscal_date,symbol,bal,record_time from balance_direct;
+
+drop view v_bal_acc  cascade;
+create view v_bal_acc as select v.fiscal_date,b.symbol,sum(transfer) as bal,current_timestamp from balance_accumulate b,v_fiscal_date v  where b.fiscal_date <= v.fiscal_date group by v.fiscal_date,b.symbol;
+
+drop view v_bal_fin  cascade;
+create view  v_bal_fin as 
+select b.fiscal_date,a.owner,b.symbol,a.note,b.bal from (select  fiscal_date,symbol,bal from v_bal_dir
+union all select fiscal_date,symbol,bal from v_bal_acc) b, account a where a.symbol = b.symbol order by b.fiscal_date desc,a.account_id;
+
+drop function f_inc_acc;
+create function f_inc_acc (s_date date,e_date date)
+returns  table(owner text, symbol text, note text, latest_date date ,latest_bal NUMERIC(10,2),pre_date date ,pre_bal NUMERIC(10,2), increment NUMERIC(10,2))
+LANGUAGE SQL
+as $$
+with v(max_date,min_date) as (select max(fiscal_date) as max_date, min(fiscal_date) as min_date from v_fiscal_date where  fiscal_date >= s_date and fiscal_date <= e_date )
+select b1.owner,b1.symbol,b1.note, b1.max_date,b1.bal ,b1.min_date,coalesce(b2.bal,0.0) , coalesce(b1.bal,0.0)-coalesce(b2.bal,0.0) as increment from (select * from v_bal_fin t1,v where  t1.fiscal_date = v.max_date )b1 left join (select * from v_bal_fin t2,v where t2.fiscal_date = v.min_date) b2  on  b1.symbol = b2.symbol;
+$$;
+
+drop function f_inc_own;
+create function f_inc_own (s_date date,e_date date)
+returns  table(owner text, symbol text, note text, latest_date date ,latest_bal NUMERIC(10,2),pre_date date ,pre_bal NUMERIC(10,2), increment NUMERIC(10,2))
+LANGUAGE SQL
+as $$
+with v(max_date,min_date) as (select max(fiscal_date) as max_date, min(fiscal_date) as min_date from v_fiscal_date where  fiscal_date >= s_date and fiscal_date <= e_date )
+select b1.owner,'--','--', b1.fiscal_date,b1.bal ,b2.fiscal_date,coalesce(b2.bal,0.0) , coalesce(b1.bal,0.0)-coalesce(b2.bal,0.0) as increment from (select t1.owner,t1.fiscal_date,sum(t1.bal) as bal from v_bal_fin t1,v where  t1.fiscal_date = v.max_date group by t1.owner, t1.fiscal_date)b1 left join (select t2.owner,t2.fiscal_date,sum(t2.bal) as bal from v_bal_fin t2,v where t2.fiscal_date = v.min_date group by t2.owner, t2.fiscal_date) b2  on  b1.owner = b2.owner;
+$$;
+
+drop function f_inc_tot;
+create function f_inc_tot (s_date date,e_date date)
+returns  table(owner text, symbol text, note text, latest_date date ,latest_bal NUMERIC(10,2),pre_date date ,pre_bal NUMERIC(10,2), increment NUMERIC(10,2))
+LANGUAGE SQL
+as $$
+with v(max_date,min_date) as (select max(fiscal_date) as max_date, min(fiscal_date) as min_date from v_fiscal_date where  fiscal_date >= s_date and fiscal_date <= e_date )
+select 'total','--','--', b1.fiscal_date,b1.bal ,b2.fiscal_date,coalesce(b2.bal,0.0) , coalesce(b1.bal,0.0)-coalesce(b2.bal,0.0) as increment from (select t1.fiscal_date,sum(t1.bal) as bal from v_bal_fin t1,v where  t1.fiscal_date = v.max_date group by t1.fiscal_date)b1 ,(select t2.fiscal_date,sum(t2.bal) as bal from v_bal_fin t2,v where t2.fiscal_date = v.min_date group by t2.fiscal_date) b2;
+$$;
+
+--select * from f_inc_acc('2019-05-31','2019-06-21');
+--select * from f_inc_own('2019-05-31','2019-06-21');
+--select * from f_inc_tot('2019-05-31','2019-06-21');
+
+drop function f_inc_fin;
+create function f_inc_fin (s_date date,e_date date)
+returns  table(owner text, symbol text, note text, latest_date date ,latest_bal NUMERIC(10,2),pre_date date ,pre_bal NUMERIC(10,2), increment NUMERIC(10,2))
+LANGUAGE SQL
+as $$
+select * from f_inc_acc(s_date,e_date) union all select * from f_inc_own(s_date,e_date) union all select * from f_inc_tot(s_date,e_date);
+$$;
+
+--select * from f_inc_fin('2019-05-31','2019-06-21');
